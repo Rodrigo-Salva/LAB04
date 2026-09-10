@@ -1,0 +1,165 @@
+<UserControl x:Class="LAB04.Views.PedidosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:LAB04.ViewModels"
+             xmlns:conv="clr-namespace:LAB04.Converters"
+             mc:Ignorable="d" d:DesignWidth="1250" d:DesignHeight="750"
+             d:DataContext="{d:DesignInstance Type=vm:PedidosViewModel}">
+    <UserControl.Resources>
+        <conv:BoolAErrorBrushConverter x:Key="BoolAErrorBrush"/>
+    </UserControl.Resources>
+    <TabControl Margin="20" Background="Transparent" BorderThickness="0">
+        <TabItem Header="Mantenimiento de Pedidos">
+            <Grid Margin="0,16,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="16"/>
+                    <RowDefinition Height="1.2*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="340"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Lista de pedidos -->
+                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Tarjeta}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Pedidos" Style="{StaticResource TituloSeccion}"/>
+                        <DataGrid ItemsSource="{Binding Pedidos}" SelectedItem="{Binding PedidoSeleccionado}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Id" Binding="{Binding IdPedido}" Width="40"/>
+                                <DataGridTextColumn Header="Cliente" Binding="{Binding NombreCliente}" Width="150"/>
+                                <DataGridTextColumn Header="Empleado" Binding="{Binding NombreEmpleado}" Width="130"/>
+                                <DataGridTextColumn Header="Fecha pedido" Binding="{Binding FechaPedido, StringFormat=d}" Width="90"/>
+                                <DataGridTextColumn Header="Fecha envío" Binding="{Binding FechaEnvio, StringFormat=d}" Width="90"/>
+                                <DataGridTextColumn Header="Destino" Binding="{Binding CiudadDestino}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <!-- Cabecera del pedido -->
+                <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource Tarjeta}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Datos del pedido" Style="{StaticResource TituloPanel}"/>
+                            <TextBlock Text="Cliente" Style="{StaticResource Etiqueta}"/>
+                            <ComboBox ItemsSource="{Binding Clientes}" SelectedItem="{Binding ClienteCombo}" DisplayMemberPath="Texto"/>
+                            <TextBlock Text="Empleado" Style="{StaticResource Etiqueta}"/>
+                            <ComboBox ItemsSource="{Binding Empleados}" SelectedItem="{Binding EmpleadoCombo}" DisplayMemberPath="Texto"/>
+                            <Grid Margin="0,0,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Fecha pedido" Style="{StaticResource Etiqueta}"/>
+                                    <DatePicker SelectedDate="{Binding FechaPedido}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Fecha requerida" Style="{StaticResource Etiqueta}"/>
+                                    <DatePicker SelectedDate="{Binding FechaRequerida}"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Fecha de envío" Style="{StaticResource Etiqueta}"/>
+                            <DatePicker SelectedDate="{Binding FechaEnvio}"/>
+                            <TextBlock Text="Transportista" Style="{StaticResource Etiqueta}"/>
+                            <ComboBox ItemsSource="{Binding Transportistas}" SelectedItem="{Binding TransportistaCombo}" DisplayMemberPath="Texto"/>
+                            <TextBlock Text="Destinatario" Style="{StaticResource Etiqueta}"/>
+                            <TextBox Text="{Binding Destinatario, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Ciudad" Style="{StaticResource Etiqueta}"/>
+                                    <TextBox Text="{Binding CiudadDestino, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="País" Style="{StaticResource Etiqueta}"/>
+                                    <TextBox Text="{Binding PaisDestino, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                <Button Content="Nuevo" Margin="0,0,6,0" Command="{Binding NuevoPedidoCommand}"/>
+                                <Button Content="Guardar" Style="{StaticResource BotonPrimario}" Margin="0,0,6,0" Command="{Binding GuardarPedidoCommand}"/>
+                                <Button Content="Eliminar" Style="{StaticResource BotonPeligro}" Command="{Binding EliminarPedidoCommand}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding Mensaje}" Foreground="{Binding EsError, Converter={StaticResource BoolAErrorBrush}}"
+                                       TextWrapping="Wrap" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Detalle del pedido -->
+                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Style="{StaticResource Tarjeta}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Detalle del pedido" Style="{StaticResource TituloPanel}"/>
+                        <Border DockPanel.Dock="Top" Style="{StaticResource SubTarjeta}" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding ProductosDisponibles}" SelectedItem="{Binding ProductoDetalle}"
+                                          Width="220" DisplayMemberPath="NombreProducto" Margin="0,0,10,0"/>
+                                <TextBlock Text="Precio:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Text="{Binding PrecioDetalleTexto, UpdateSourceTrigger=PropertyChanged}" Width="70" Margin="0,0,10,0"/>
+                                <TextBlock Text="Cantidad:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Text="{Binding CantidadDetalleTexto, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="0,0,10,0"/>
+                                <TextBlock Text="Descuento:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Text="{Binding DescuentoDetalleTexto, UpdateSourceTrigger=PropertyChanged}" Width="50" Margin="0,0,10,0"/>
+                                <Button Content="Agregar línea" Style="{StaticResource BotonPrimario}" Command="{Binding AgregarDetalleCommand}" Margin="0,0,8,0"/>
+                                <Button Content="Quitar línea seleccionada" Command="{Binding EliminarDetalleCommand}"/>
+                            </StackPanel>
+                        </Border>
+                        <DataGrid ItemsSource="{Binding Detalle}" SelectedItem="{Binding LineaDetalleSeleccionada}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Producto" Binding="{Binding NombreProducto}" Width="220"/>
+                                <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnidad, StringFormat=C}" Width="80"/>
+                                <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="80"/>
+                                <DataGridTextColumn Header="Descuento" Binding="{Binding Descuento, StringFormat=P0}" Width="80"/>
+                                <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </TabItem>
+
+        <TabItem Header="Reporte por fechas">
+            <Border Style="{StaticResource Tarjeta}" Margin="0,16,0,0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource SubTarjeta}" Margin="0,0,0,12">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Desde:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <DatePicker SelectedDate="{Binding FechaDesde}" Width="130" Margin="0,0,20,0"/>
+                            <TextBlock Text="Hasta:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <DatePicker SelectedDate="{Binding FechaHasta}" Width="130" Margin="0,0,20,0"/>
+                            <Button Content="Generar reporte" Style="{StaticResource BotonPrimario}" Command="{Binding GenerarReporteCommand}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border DockPanel.Dock="Bottom" Background="#EEF2F9" CornerRadius="6" Padding="10" Margin="0,12,0,0">
+                        <TextBlock Text="{Binding TotalReporte}" FontWeight="SemiBold" Foreground="{StaticResource ColorPrimario}"/>
+                    </Border>
+                    <DataGrid ItemsSource="{Binding Reporte}" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Pedido" Binding="{Binding IdPedido}" Width="60"/>
+                            <DataGridTextColumn Header="Fecha" Binding="{Binding FechaPedido, StringFormat=d}" Width="90"/>
+                            <DataGridTextColumn Header="Cliente" Binding="{Binding NombreCliente}" Width="150"/>
+                            <DataGridTextColumn Header="Producto" Binding="{Binding NombreProducto}" Width="180"/>
+                            <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnidad, StringFormat=C}" Width="80"/>
+                            <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="70"/>
+                            <DataGridTextColumn Header="Descuento" Binding="{Binding Descuento, StringFormat=P0}" Width="80"/>
+                            <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </TabItem>
+    </TabControl>
+</UserControl>

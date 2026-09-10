@@ -1,0 +1,58 @@
+<Window x:Class="LAB04.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:LAB04.ViewModels"
+        xmlns:views="clr-namespace:LAB04.Views"
+        mc:Ignorable="d"
+        Title="Neptuno - Mantenimientos" Height="740" Width="1280" WindowStartupLocation="CenterScreen">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+    <Window.Resources>
+        <!-- Cada ViewModel se renderiza con su View correspondiente (patrón MVVM). -->
+        <DataTemplate DataType="{x:Type vm:ProductosViewModel}">
+            <views:ProductosView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CategoriasViewModel}">
+            <views:CategoriasView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProveedoresViewModel}">
+            <views:ProveedoresView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PedidosViewModel}">
+            <views:PedidosView/>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Barra lateral -->
+        <DockPanel Grid.Column="0" Background="{StaticResource ColorBarraLateral}">
+            <StackPanel DockPanel.Dock="Top" Margin="20,24,20,28">
+                <TextBlock Text="🐬 Neptuno" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Sistema de mantenimientos" FontSize="11"
+                           Foreground="{StaticResource ColorTextoClaroSuave}" Margin="0,4,0,0"/>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <Button Content="📦  Productos" Style="{StaticResource BotonNavProductos}"
+                        Command="{Binding MostrarProductosCommand}"/>
+                <Button Content="🏷️  Categorías" Style="{StaticResource BotonNavCategorias}"
+                        Command="{Binding MostrarCategoriasCommand}"/>
+                <Button Content="🚚  Proveedores" Style="{StaticResource BotonNavProveedores}"
+                        Command="{Binding MostrarProveedoresCommand}"/>
+                <Button Content="🧾  Pedidos / Reportes" Style="{StaticResource BotonNavPedidos}"
+                        Command="{Binding MostrarPedidosCommand}"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Contenido -->
+        <Border Grid.Column="1" Background="{StaticResource ColorFondo}" Padding="4">
+            <ContentControl Content="{Binding CurrentViewModel}"/>
+        </Border>
+    </Grid>
+</Window>
