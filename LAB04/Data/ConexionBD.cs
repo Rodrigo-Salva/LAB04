@@ -3,10 +3,6 @@ using Microsoft.Data.SqlClient;
 
 namespace LAB04.Data
 {
-    /// <summary>
-    /// Provee conexiones ADO.NET a NeptunoDB usando la cadena de conexión
-    /// definida en App.config (connectionStrings -> NeptunoDB).
-    /// </summary>
     public static class ConexionBD
     {
         public static string ObtenerCadenaConexion()

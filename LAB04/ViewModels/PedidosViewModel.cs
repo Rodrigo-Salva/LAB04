@@ -8,7 +8,6 @@ using LAB04.Models;
 
 namespace LAB04.ViewModels
 {
-    /// <summary>ViewModel del mantenimiento de Pedidos (cabecera + detalle) y del reporte por fechas.</summary>
     public partial class PedidosViewModel : ObservableObject
     {
         private readonly PedidoRepository _repo = new();

@@ -7,7 +7,6 @@ using LAB04.Models;
 
 namespace LAB04.ViewModels
 {
-    /// <summary>ViewModel del mantenimiento de Categorías.</summary>
     public partial class CategoriasViewModel : ObservableObject
     {
         private readonly CategoriaRepository _repo = new();

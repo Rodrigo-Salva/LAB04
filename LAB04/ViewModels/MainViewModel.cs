@@ -3,13 +3,11 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace LAB04.ViewModels
 {
-    /// <summary>ViewModel raíz: controla qué mantenimiento se muestra en la ventana principal.</summary>
     public partial class MainViewModel : ObservableObject
     {
         [ObservableProperty]
         private ObservableObject currentViewModel;
 
-        /// <summary>Nombre de la sección visible; se usa para resaltar el botón activo en la barra lateral.</summary>
         [ObservableProperty]
         private string seccionActual = "Productos";
 

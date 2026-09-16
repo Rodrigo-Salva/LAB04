@@ -8,7 +8,6 @@ using LAB04.Models;
 
 namespace LAB04.ViewModels
 {
-    /// <summary>ViewModel del mantenimiento de Productos.</summary>
     public partial class ProductosViewModel : ObservableObject
     {
         private readonly ProductoRepository _repo = new();

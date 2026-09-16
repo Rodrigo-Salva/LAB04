@@ -78,8 +78,6 @@ namespace LAB04.Data
             cmd.Parameters.AddWithValue("@PaisDestino", (object?)p.PaisDestino ?? DBNull.Value);
         }
 
-        // ---------------- Detalles de pedido ----------------
-
         public List<DetallePedido> ListarDetalles(int idPedido)
         {
             var lista = new List<DetallePedido>();
@@ -140,8 +138,6 @@ namespace LAB04.Data
             cmd.ExecuteNonQuery();
         }
 
-        // ---------------- Listas de apoyo (combos) ----------------
-
         public List<ItemCombo> ListarClientes() => ListarCombo("dbo.sp_Clientes_Listar");
 
         public List<ItemCombo> ListarEmpleados() => ListarCombo("dbo.sp_Empleados_Listar");
@@ -165,8 +161,6 @@ namespace LAB04.Data
             }
             return lista;
         }
-
-        // ---------------- Reporte por intervalo de fechas ----------------
 
         public List<ReporteDetallePedido> ReportePorFechas(DateTime fechaInicio, DateTime fechaFin)
         {

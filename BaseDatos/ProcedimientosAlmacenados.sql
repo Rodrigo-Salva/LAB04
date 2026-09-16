@@ -2,7 +2,16 @@
    NeptunoDB - Procedimientos almacenados
    CRUD de Productos, Categorias, Proveedores, Pedidos (+ DetallePedidos)
    y procedimientos de búsqueda / reportes.
-   Esquema base: BaseDatos/base.sql (ejecutar ese script primero).
+
+   Semana 05: eliminación lógica. Categorias, Proveedores, Productos y
+   Pedidos tienen un campo Activo (BIT). Sus procedimientos "Eliminar"
+   hacen UPDATE ... SET Activo = 0 en vez de DELETE, y todos los listados
+   (y el reporte) solo devuelven registros con Activo = 1.
+   DetallePedidos NO tiene columna Activo: sus líneas se siguen
+   agregando/editando/quitando con INSERT/UPDATE/DELETE físico normal,
+   porque no forma parte del requisito de baja lógica.
+
+   Orden de ejecución: base.sql -> 02_AgregarColumnaActivo.sql -> este script.
    ========================================================================= */
 USE NeptunoDB;
 GO
@@ -18,6 +27,7 @@ BEGIN
     SET NOCOUNT ON;
     SELECT CategoriaID AS IdCategoria, NombreCategoria, Descripcion
     FROM dbo.Categorias
+    WHERE Activo = 1
     ORDER BY NombreCategoria;
 END
 GO
@@ -31,7 +41,7 @@ BEGIN
     SET NOCOUNT ON;
     SELECT CategoriaID AS IdCategoria, NombreCategoria, Descripcion
     FROM dbo.Categorias
-    WHERE CategoriaID = @IdCategoria;
+    WHERE CategoriaID = @IdCategoria AND Activo = 1;
 END
 GO
 
@@ -73,7 +83,8 @@ CREATE PROCEDURE dbo.sp_Categorias_Eliminar
 AS
 BEGIN
     SET NOCOUNT ON;
-    DELETE FROM dbo.Categorias WHERE CategoriaID = @IdCategoria;
+    -- Baja lógica: nunca se borra físicamente el registro.
+    UPDATE dbo.Categorias SET Activo = 0 WHERE CategoriaID = @IdCategoria;
 END
 GO
 
@@ -89,6 +100,7 @@ BEGIN
     SELECT ProveedorID AS IdProveedor, CompaniaNombre AS NombreCompania, NombreContacto,
            CargoContacto AS Cargo, Direccion, Ciudad, CodigoPostal, Pais, Telefono, Fax
     FROM dbo.Proveedores
+    WHERE Activo = 1
     ORDER BY CompaniaNombre;
 END
 GO
@@ -103,7 +115,7 @@ BEGIN
     SELECT ProveedorID AS IdProveedor, CompaniaNombre AS NombreCompania, NombreContacto,
            CargoContacto AS Cargo, Direccion, Ciudad, CodigoPostal, Pais, Telefono, Fax
     FROM dbo.Proveedores
-    WHERE ProveedorID = @IdProveedor;
+    WHERE ProveedorID = @IdProveedor AND Activo = 1;
 END
 GO
 
@@ -168,7 +180,8 @@ CREATE PROCEDURE dbo.sp_Proveedores_Eliminar
 AS
 BEGIN
     SET NOCOUNT ON;
-    DELETE FROM dbo.Proveedores WHERE ProveedorID = @IdProveedor;
+    -- Baja lógica: nunca se borra físicamente el registro.
+    UPDATE dbo.Proveedores SET Activo = 0 WHERE ProveedorID = @IdProveedor;
 END
 GO
 
@@ -184,7 +197,8 @@ BEGIN
     SELECT ProveedorID AS IdProveedor, CompaniaNombre AS NombreCompania, NombreContacto,
            CargoContacto AS Cargo, Direccion, Ciudad, CodigoPostal, Pais, Telefono, Fax
     FROM dbo.Proveedores
-    WHERE (@NombreContacto IS NULL OR @NombreContacto = '' OR NombreContacto LIKE '%' + @NombreContacto + '%')
+    WHERE Activo = 1
+      AND (@NombreContacto IS NULL OR @NombreContacto = '' OR NombreContacto LIKE '%' + @NombreContacto + '%')
       AND (@Ciudad IS NULL OR @Ciudad = '' OR Ciudad LIKE '%' + @Ciudad + '%')
     ORDER BY CompaniaNombre;
 END
@@ -206,6 +220,7 @@ BEGIN
     FROM dbo.Productos p
     LEFT JOIN dbo.Proveedores pr ON pr.ProveedorID = p.ProveedorID
     LEFT JOIN dbo.Categorias c ON c.CategoriaID = p.CategoriaID
+    WHERE p.Activo = 1
     ORDER BY p.NombreProducto;
 END
 GO
@@ -221,7 +236,7 @@ BEGIN
            CantidadPorUnidad, PrecioUnidad, UnidadesEnExistencia, UnidadesEnPedido,
            NivelDeReorden AS NivelReorden, Descontinuado
     FROM dbo.Productos
-    WHERE ProductoID = @IdProducto;
+    WHERE ProductoID = @IdProducto AND Activo = 1;
 END
 GO
 
@@ -288,7 +303,8 @@ CREATE PROCEDURE dbo.sp_Productos_Eliminar
 AS
 BEGIN
     SET NOCOUNT ON;
-    DELETE FROM dbo.Productos WHERE ProductoID = @IdProducto;
+    -- Baja lógica: nunca se borra físicamente el registro.
+    UPDATE dbo.Productos SET Activo = 0 WHERE ProductoID = @IdProducto;
 END
 GO
 
@@ -343,6 +359,7 @@ BEGIN
     LEFT JOIN dbo.Clientes c ON c.ClienteID = pe.ClienteID
     LEFT JOIN dbo.Empleados e ON e.EmpleadoID = pe.EmpleadoID
     LEFT JOIN dbo.Transportistas t ON t.TransportistaID = pe.TransportistaID
+    WHERE pe.Activo = 1
     ORDER BY pe.FechaPedido DESC;
 END
 GO
@@ -358,7 +375,7 @@ BEGIN
            FechaPedido, FechaRequerida, FechaEnvio, TransportistaID AS IdTransportista,
            Destinatario AS NombreDestinatario, CiudadDestino, PaisDestino
     FROM dbo.Pedidos
-    WHERE PedidoID = @IdPedido;
+    WHERE PedidoID = @IdPedido AND Activo = 1;
 END
 GO
 
@@ -425,8 +442,11 @@ CREATE PROCEDURE dbo.sp_Pedidos_Eliminar
 AS
 BEGIN
     SET NOCOUNT ON;
-    DELETE FROM dbo.DetallePedidos WHERE PedidoID = @IdPedido;
-    DELETE FROM dbo.Pedidos WHERE PedidoID = @IdPedido;
+    -- Baja lógica: nunca se borra físicamente el pedido ni su detalle.
+    -- Al quedar Activo = 0, el pedido deja de aparecer en sp_Pedidos_Listar
+    -- y sus líneas quedan automáticamente excluidas del reporte por fechas
+    -- (que hace INNER JOIN con Pedidos filtrando Activo = 1).
+    UPDATE dbo.Pedidos SET Activo = 0 WHERE PedidoID = @IdPedido;
 END
 GO
 
@@ -497,7 +517,8 @@ BEGIN
 END
 GO
 
--- Reporte: detalle de pedidos + INNER JOIN con Pedidos, filtrando por intervalo de fechas
+-- Reporte: detalle de pedidos + INNER JOIN con Pedidos, filtrando por intervalo de fechas.
+-- Excluye pedidos dados de baja lógicamente (Activo = 0).
 IF OBJECT_ID('dbo.sp_DetallesPedidos_ReportePorFechas', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_DetallesPedidos_ReportePorFechas;
 GO
 CREATE PROCEDURE dbo.sp_DetallesPedidos_ReportePorFechas
@@ -514,6 +535,7 @@ BEGIN
     INNER JOIN dbo.Productos p ON p.ProductoID = dp.ProductoID
     LEFT JOIN dbo.Clientes c ON c.ClienteID = pe.ClienteID
     WHERE pe.FechaPedido BETWEEN @FechaInicio AND @FechaFin
+      AND pe.Activo = 1
     ORDER BY pe.FechaPedido, pe.PedidoID;
 END
 GO

@@ -7,7 +7,6 @@ using LAB04.Models;
 
 namespace LAB04.ViewModels
 {
-    /// <summary>ViewModel del mantenimiento de Proveedores, con búsqueda por contacto/ciudad.</summary>
     public partial class ProveedoresViewModel : ObservableObject
     {
         private readonly ProveedorRepository _repo = new();
