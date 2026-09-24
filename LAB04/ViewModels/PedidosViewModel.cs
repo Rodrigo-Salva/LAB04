@@ -13,6 +13,9 @@ namespace LAB04.ViewModels
         private readonly PedidoRepository _repo = new();
         private readonly ProductoRepository _repoProductos = new();
 
+        private PedidosDesconectados? _datos;
+        private bool _conservarFormulario;
+
         public ObservableCollection<Pedido> Pedidos { get; } = new();
         public ObservableCollection<ItemCombo> Clientes { get; } = new();
         public ObservableCollection<ItemCombo> Empleados { get; } = new();
@@ -48,12 +51,13 @@ namespace LAB04.ViewModels
 
         public PedidosViewModel()
         {
-            CargarCombos();
-            CargarLista();
+            _ = InicializarAsync();
         }
 
         partial void OnPedidoSeleccionadoChanged(Pedido? value)
         {
+            if (_conservarFormulario) return;
+
             Detalle.Clear();
             if (value == null) return;
 
@@ -68,7 +72,7 @@ namespace LAB04.ViewModels
             PaisDestino = value.PaisDestino;
             Mensaje = string.Empty;
 
-            CargarDetalle(value.IdPedido);
+            MostrarDetalle(value.IdPedido);
         }
 
         partial void OnProductoDetalleChanged(Producto? value)
@@ -76,18 +80,29 @@ namespace LAB04.ViewModels
             if (value != null) PrecioDetalleTexto = value.PrecioUnidad.ToString(CultureInfo.InvariantCulture);
         }
 
-        private void CargarCombos()
+        private async Task InicializarAsync()
+        {
+            await CargarCombosAsync();
+            await CargarListaAsync();
+        }
+
+        private async Task CargarCombosAsync()
         {
             try
             {
+                var clientes = await _repo.ListarClientesAsync();
+                var empleados = await _repo.ListarEmpleadosAsync();
+                var transportistas = await _repo.ListarTransportistasAsync();
+                var productos = await _repoProductos.ListarAsync();
+
                 Clientes.Clear();
-                foreach (var c in _repo.ListarClientes()) Clientes.Add(c);
+                foreach (var c in clientes) Clientes.Add(c);
                 Empleados.Clear();
-                foreach (var e in _repo.ListarEmpleados()) Empleados.Add(e);
+                foreach (var e in empleados) Empleados.Add(e);
                 Transportistas.Clear();
-                foreach (var t in _repo.ListarTransportistas()) Transportistas.Add(t);
+                foreach (var t in transportistas) Transportistas.Add(t);
                 ProductosDisponibles.Clear();
-                foreach (var p in _repoProductos.Listar()) ProductosDisponibles.Add(p);
+                foreach (var p in productos) ProductosDisponibles.Add(p);
             }
             catch (Exception ex)
             {
@@ -95,12 +110,14 @@ namespace LAB04.ViewModels
             }
         }
 
-        private void CargarLista()
+        private async Task CargarListaAsync()
         {
             try
             {
+                _datos = await _repo.CargarDesconectadoAsync();
+                var pedidos = _datos.Pedidos();
                 Pedidos.Clear();
-                foreach (var p in _repo.Listar()) Pedidos.Add(p);
+                foreach (var p in pedidos) Pedidos.Add(p);
             }
             catch (Exception ex)
             {
@@ -108,17 +125,26 @@ namespace LAB04.ViewModels
             }
         }
 
-        private void CargarDetalle(int idPedido)
+        private async Task RecargarConservandoFormularioAsync(int? idPedido)
         {
+            _conservarFormulario = true;
             try
             {
-                Detalle.Clear();
-                foreach (var d in _repo.ListarDetalles(idPedido)) Detalle.Add(d);
+                await CargarListaAsync();
+                PedidoSeleccionado = idPedido == null ? null : Pedidos.FirstOrDefault(x => x.IdPedido == idPedido);
             }
-            catch (Exception ex)
+            finally
             {
-                MostrarError("Error al cargar el detalle: " + ex.Message);
+                _conservarFormulario = false;
             }
+            if (idPedido != null) MostrarDetalle(idPedido.Value);
+        }
+
+        private void MostrarDetalle(int idPedido)
+        {
+            Detalle.Clear();
+            if (_datos == null) return;
+            foreach (var d in _datos.DetalleDe(idPedido)) Detalle.Add(d);
         }
 
         [RelayCommand]
@@ -139,7 +165,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void GuardarPedido()
+        private async Task GuardarPedidoAsync()
         {
             if (FechaPedido == null)
             {
@@ -161,12 +187,11 @@ namespace LAB04.ViewModels
 
                 bool esNuevo = PedidoSeleccionado == null;
                 if (esNuevo)
-                    _repo.Insertar(p);
+                    await _repo.InsertarAsync(p);
                 else
-                    _repo.Actualizar(p);
+                    await _repo.ActualizarAsync(p);
 
-                CargarLista();
-                PedidoSeleccionado = Pedidos.FirstOrDefault(x => x.IdPedido == p.IdPedido);
+                await RecargarConservandoFormularioAsync(p.IdPedido);
                 MostrarExito(esNuevo
                     ? $"Pedido creado (Id {p.IdPedido}). Ahora puedes agregar líneas de detalle."
                     : "Pedido actualizado correctamente.");
@@ -178,7 +203,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void EliminarPedido()
+        private async Task EliminarPedidoAsync()
         {
             if (PedidoSeleccionado == null)
             {
@@ -190,8 +215,8 @@ namespace LAB04.ViewModels
                 return;
             try
             {
-                _repo.Eliminar(PedidoSeleccionado.IdPedido);
-                CargarLista();
+                await _repo.EliminarAsync(PedidoSeleccionado.IdPedido);
+                await CargarListaAsync();
                 NuevoPedido();
             }
             catch (Exception ex)
@@ -201,7 +226,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void AgregarDetalle()
+        private async Task AgregarDetalleAsync()
         {
             if (PedidoSeleccionado == null)
             {
@@ -223,15 +248,16 @@ namespace LAB04.ViewModels
 
             try
             {
-                _repo.InsertarDetalle(new DetallePedido
+                var idPedido = PedidoSeleccionado.IdPedido;
+                await _repo.InsertarDetalleAsync(new DetallePedido
                 {
-                    IdPedido = PedidoSeleccionado.IdPedido,
+                    IdPedido = idPedido,
                     IdProducto = ProductoDetalle.IdProducto,
                     PrecioUnidad = precio,
                     Cantidad = cantidad,
                     Descuento = descuento
                 });
-                CargarDetalle(PedidoSeleccionado.IdPedido);
+                await RecargarConservandoFormularioAsync(idPedido);
                 MostrarExito("Línea agregada.");
             }
             catch (Exception ex)
@@ -241,7 +267,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void EliminarDetalle()
+        private async Task EliminarDetalleAsync()
         {
             if (PedidoSeleccionado == null || LineaDetalleSeleccionada == null)
             {
@@ -250,8 +276,9 @@ namespace LAB04.ViewModels
             }
             try
             {
-                _repo.EliminarDetalle(LineaDetalleSeleccionada.IdPedido, LineaDetalleSeleccionada.IdProducto);
-                CargarDetalle(PedidoSeleccionado.IdPedido);
+                var idPedido = PedidoSeleccionado.IdPedido;
+                await _repo.EliminarDetalleAsync(idPedido, LineaDetalleSeleccionada.IdProducto);
+                await RecargarConservandoFormularioAsync(idPedido);
             }
             catch (Exception ex)
             {
@@ -260,7 +287,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void GenerarReporte()
+        private async Task GenerarReporteAsync()
         {
             if (FechaDesde == null || FechaHasta == null)
             {
@@ -269,7 +296,7 @@ namespace LAB04.ViewModels
             }
             try
             {
-                var datos = _repo.ReportePorFechas(FechaDesde.Value, FechaHasta.Value);
+                var datos = await _repo.ReportePorFechasAsync(FechaDesde.Value, FechaHasta.Value);
                 Reporte.Clear();
                 foreach (var d in datos) Reporte.Add(d);
                 var total = datos.Sum(d => d.Subtotal);

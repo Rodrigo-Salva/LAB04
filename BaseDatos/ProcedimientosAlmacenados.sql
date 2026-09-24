@@ -470,6 +470,25 @@ BEGIN
 END
 GO
 
+-- Semana 06: todas las líneas de detalle de pedidos activos, para armar un DataSet
+-- desconectado (Pedidos + DetallePedidos con DataRelation) en una sola carga.
+IF OBJECT_ID('dbo.sp_DetallesPedidos_ListarActivos', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_DetallesPedidos_ListarActivos;
+GO
+CREATE PROCEDURE dbo.sp_DetallesPedidos_ListarActivos
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT dp.PedidoID AS IdPedido, dp.ProductoID AS IdProducto, p.NombreProducto,
+           dp.PrecioUnidad, dp.Cantidad, dp.Descuento,
+           CAST((dp.PrecioUnidad * dp.Cantidad * (1 - dp.Descuento)) AS DECIMAL(10,2)) AS Subtotal
+    FROM dbo.DetallePedidos dp
+    INNER JOIN dbo.Pedidos pe ON pe.PedidoID = dp.PedidoID
+    INNER JOIN dbo.Productos p ON p.ProductoID = dp.ProductoID
+    WHERE pe.Activo = 1
+    ORDER BY dp.PedidoID, p.NombreProducto;
+END
+GO
+
 IF OBJECT_ID('dbo.sp_DetallesPedidos_Insertar', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_DetallesPedidos_Insertar;
 GO
 CREATE PROCEDURE dbo.sp_DetallesPedidos_Insertar

@@ -30,7 +30,7 @@ namespace LAB04.ViewModels
 
         public CategoriasViewModel()
         {
-            CargarLista();
+            _ = CargarListaAsync();
         }
 
         partial void OnCategoriaSeleccionadaChanged(Categoria? value)
@@ -41,12 +41,13 @@ namespace LAB04.ViewModels
             Mensaje = string.Empty;
         }
 
-        private void CargarLista()
+        private async Task CargarListaAsync()
         {
             try
             {
+                var categorias = await _repo.ListarAsync();
                 Categorias.Clear();
-                foreach (var c in _repo.Listar()) Categorias.Add(c);
+                foreach (var c in categorias) Categorias.Add(c);
             }
             catch (Exception ex)
             {
@@ -64,7 +65,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Guardar()
+        private async Task GuardarAsync()
         {
             if (string.IsNullOrWhiteSpace(Nombre))
             {
@@ -76,15 +77,15 @@ namespace LAB04.ViewModels
                 if (CategoriaSeleccionada == null)
                 {
                     var nueva = new Categoria { NombreCategoria = Nombre.Trim(), Descripcion = Descripcion };
-                    _repo.Insertar(nueva);
+                    await _repo.InsertarAsync(nueva);
                 }
                 else
                 {
                     CategoriaSeleccionada.NombreCategoria = Nombre.Trim();
                     CategoriaSeleccionada.Descripcion = Descripcion;
-                    _repo.Actualizar(CategoriaSeleccionada);
+                    await _repo.ActualizarAsync(CategoriaSeleccionada);
                 }
-                CargarLista();
+                await CargarListaAsync();
                 Nuevo();
                 MostrarExito("Guardado correctamente.");
             }
@@ -95,7 +96,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Eliminar()
+        private async Task EliminarAsync()
         {
             if (CategoriaSeleccionada == null)
             {
@@ -107,13 +108,13 @@ namespace LAB04.ViewModels
                 return;
             try
             {
-                _repo.Eliminar(CategoriaSeleccionada.IdCategoria);
-                CargarLista();
+                await _repo.EliminarAsync(CategoriaSeleccionada.IdCategoria);
+                await CargarListaAsync();
                 Nuevo();
             }
             catch (Exception ex)
             {
-                MostrarError("No se pudo eliminar (¿tiene productos asociados?): " + ex.Message);
+                MostrarError("No se pudo eliminar: " + ex.Message);
             }
         }
 

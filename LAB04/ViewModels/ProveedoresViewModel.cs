@@ -33,7 +33,7 @@ namespace LAB04.ViewModels
 
         public ProveedoresViewModel()
         {
-            CargarLista();
+            _ = CargarListaAsync();
         }
 
         partial void OnProveedorSeleccionadoChanged(Proveedor? value)
@@ -51,12 +51,13 @@ namespace LAB04.ViewModels
             Mensaje = string.Empty;
         }
 
-        private void CargarLista()
+        private async Task CargarListaAsync()
         {
             try
             {
+                var proveedores = await _repo.ListarAsync();
                 Proveedores.Clear();
-                foreach (var p in _repo.Listar()) Proveedores.Add(p);
+                foreach (var p in proveedores) Proveedores.Add(p);
             }
             catch (Exception ex)
             {
@@ -65,12 +66,13 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Buscar()
+        private async Task BuscarAsync()
         {
             try
             {
+                var proveedores = await _repo.BuscarPorContactoCiudadAsync(BuscarContacto, BuscarCiudad);
                 Proveedores.Clear();
-                foreach (var p in _repo.BuscarPorContactoCiudad(BuscarContacto, BuscarCiudad)) Proveedores.Add(p);
+                foreach (var p in proveedores) Proveedores.Add(p);
                 Mensaje = string.Empty;
             }
             catch (Exception ex)
@@ -80,11 +82,11 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void LimpiarBusqueda()
+        private async Task LimpiarBusquedaAsync()
         {
             BuscarContacto = string.Empty;
             BuscarCiudad = string.Empty;
-            CargarLista();
+            await CargarListaAsync();
         }
 
         [RelayCommand]
@@ -104,7 +106,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Guardar()
+        private async Task GuardarAsync()
         {
             if (string.IsNullOrWhiteSpace(NombreCompania))
             {
@@ -125,11 +127,11 @@ namespace LAB04.ViewModels
                 p.Fax = Fax;
 
                 if (ProveedorSeleccionado == null)
-                    _repo.Insertar(p);
+                    await _repo.InsertarAsync(p);
                 else
-                    _repo.Actualizar(p);
+                    await _repo.ActualizarAsync(p);
 
-                CargarLista();
+                await CargarListaAsync();
                 Nuevo();
                 MostrarExito("Guardado correctamente.");
             }
@@ -140,7 +142,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Eliminar()
+        private async Task EliminarAsync()
         {
             if (ProveedorSeleccionado == null)
             {
@@ -152,13 +154,13 @@ namespace LAB04.ViewModels
                 return;
             try
             {
-                _repo.Eliminar(ProveedorSeleccionado.IdProveedor);
-                CargarLista();
+                await _repo.EliminarAsync(ProveedorSeleccionado.IdProveedor);
+                await CargarListaAsync();
                 Nuevo();
             }
             catch (Exception ex)
             {
-                MostrarError("No se pudo eliminar (¿tiene productos asociados?): " + ex.Message);
+                MostrarError("No se pudo eliminar: " + ex.Message);
             }
         }
 

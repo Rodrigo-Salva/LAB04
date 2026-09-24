@@ -35,8 +35,7 @@ namespace LAB04.ViewModels
 
         public ProductosViewModel()
         {
-            CargarCombos();
-            CargarLista();
+            _ = InicializarAsync();
         }
 
         partial void OnProductoSeleccionadoChanged(Producto? value)
@@ -54,14 +53,22 @@ namespace LAB04.ViewModels
             Mensaje = string.Empty;
         }
 
-        private void CargarCombos()
+        private async Task InicializarAsync()
+        {
+            await CargarCombosAsync();
+            await CargarListaAsync();
+        }
+
+        private async Task CargarCombosAsync()
         {
             try
             {
+                var categorias = await _repoCategorias.ListarAsync();
+                var proveedores = await _repoProveedores.ListarAsync();
                 Categorias.Clear();
-                foreach (var c in _repoCategorias.Listar()) Categorias.Add(c);
+                foreach (var c in categorias) Categorias.Add(c);
                 Proveedores.Clear();
-                foreach (var p in _repoProveedores.Listar()) Proveedores.Add(p);
+                foreach (var p in proveedores) Proveedores.Add(p);
             }
             catch (Exception ex)
             {
@@ -69,12 +76,13 @@ namespace LAB04.ViewModels
             }
         }
 
-        private void CargarLista()
+        private async Task CargarListaAsync()
         {
             try
             {
+                var productos = await _repo.ListarAsync();
                 Productos.Clear();
-                foreach (var p in _repo.Listar()) Productos.Add(p);
+                foreach (var p in productos) Productos.Add(p);
             }
             catch (Exception ex)
             {
@@ -99,7 +107,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Guardar()
+        private async Task GuardarAsync()
         {
             if (string.IsNullOrWhiteSpace(Nombre))
             {
@@ -133,11 +141,11 @@ namespace LAB04.ViewModels
                 p.Descontinuado = Descontinuado;
 
                 if (ProductoSeleccionado == null)
-                    _repo.Insertar(p);
+                    await _repo.InsertarAsync(p);
                 else
-                    _repo.Actualizar(p);
+                    await _repo.ActualizarAsync(p);
 
-                CargarLista();
+                await CargarListaAsync();
                 Nuevo();
                 MostrarExito("Guardado correctamente.");
             }
@@ -148,7 +156,7 @@ namespace LAB04.ViewModels
         }
 
         [RelayCommand]
-        private void Eliminar()
+        private async Task EliminarAsync()
         {
             if (ProductoSeleccionado == null)
             {
@@ -160,13 +168,13 @@ namespace LAB04.ViewModels
                 return;
             try
             {
-                _repo.Eliminar(ProductoSeleccionado.IdProducto);
-                CargarLista();
+                await _repo.EliminarAsync(ProductoSeleccionado.IdProducto);
+                await CargarListaAsync();
                 Nuevo();
             }
             catch (Exception ex)
             {
-                MostrarError("No se pudo eliminar (¿tiene pedidos asociados?): " + ex.Message);
+                MostrarError("No se pudo eliminar: " + ex.Message);
             }
         }
 
